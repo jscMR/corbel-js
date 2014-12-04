@@ -14,8 +14,16 @@ module.exports = function(grunt) {
                 target: {
                     src: ['examples/nodeapp/main.js']
                 }
+            },
+            json2lcov: {
+                options: {
+                    // json src , output .lcov src
+                    args: ['./target/coverage/coverage.json', './target/coverage/coverage.lcov']
+                },
+                src: ['./jsoncov2lcov.js']
             }
         },
+        exec: {},
         open: {
             webapp: {
                 path: 'http://localhost:9000',
@@ -49,7 +57,8 @@ module.exports = function(grunt) {
                         return [
                             mountFolder(connect, 'test/browser/'),
                             mountFolder(connect, 'src/'),
-                            mountFolder(connect, 'bower_components/')
+                            mountFolder(connect, 'bower_components/'),
+                            mountFolder(connect, 'target/coverage')
                         ];
                     }
                 }
@@ -89,6 +98,23 @@ module.exports = function(grunt) {
                 }
             }
         },
+        cover: {
+            compile: {
+                files: {
+                    'target/coverage/instrumented_src/*.js': ['src/**/*.js']
+                }
+            }
+        },
+        coveralls: {
+            options: {
+                // LCOV coverage file relevant to every target
+                src: 'target/coverage/lcov.info',
+                // When true, grunt-coveralls will only print a warning rather than
+                // an error, to prevent CI builds from failing unnecessarily (e.g. if
+                // coveralls.io is down). Optional, defaults to false.
+                force: true
+            }
+        },
         mochaTest: { //test for nodejs app with mocha
             tap: {
                 options: {
@@ -99,9 +125,16 @@ module.exports = function(grunt) {
                 },
                 src: ['test/node/**/*.js']
             },
+            // coverage: {
+            //     options: {
+            //         reporter: ,
+            //         captureFile:
+            //     },
+            //     src: ['test']
+            // },
             noreporter: {
                 src: ['test/node/**/*.js']
-            },
+            }
         }, //test for browser app with mocha and phanthom
         'mocha_phantomjs': {
             options: {
@@ -122,6 +155,15 @@ module.exports = function(grunt) {
                 options: {
                     reporter: 'tap',
                     output: 'target/browser/test_results.dirty.tap'
+                }
+            },
+            coverage: {
+                options: {
+                    urls: [
+                        'http://localhost:8000/index-cover.html' /*<%= connect.options.port %>*/
+                    ],
+                    reporter: 'json-cov',
+                    output: 'target/coverage/coverage.json'
                 }
             }
         },
@@ -151,6 +193,9 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-mocha-phantomjs');
     grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-line-remover');
+    grunt.loadNpmTasks('grunt-exec');
+    grunt.loadNpmTasks('grunt-coverjs');
+    grunt.loadNpmTasks('grunt-coveralls');
 
 
     grunt.registerTask('server:webapp', [
@@ -194,6 +239,15 @@ module.exports = function(grunt) {
         'test:node'
     ]);
 
+    grunt.registerTask('test:coverage', [
+        'cover',
+        'express:load',
+        'connect:test_webserver',
+        'mocha_phantomjs:coverage',
+        'execute:json2lcov'
+
+    ]);
+
     grunt.registerTask('server:test', [
         'test:browser',
         'open:test',
@@ -201,7 +255,8 @@ module.exports = function(grunt) {
     ]);
 
     grunt.registerTask('build', [
-        'test'
+        'test',
+        'test:coverage'
     ]);
 
 };

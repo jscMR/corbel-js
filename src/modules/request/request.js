@@ -32,7 +32,7 @@
     if (typeof module !== 'undefined' && module.exports) {
         var http = require('http');
 
-        sender = function(options, callback) {
+        request.sender = function(options, callback) {
             options = options || {};
             var that = this;
 
@@ -64,10 +64,12 @@
 
     //browser
     if (typeof window !== 'undefined') {
-        sender = function(options, callback) {
+        request.sender = function(options, callback) {
             options = options || {};
-            var xhr = new XMLHttpRequest();
+
+            var xhr = request.getXhr();
             var url;
+
             try {
                 url = options.hostname + ':' + options.port + options.path;
             } catch (Ex) {
@@ -79,33 +81,33 @@
                 throw new Error('You must define an url and http method');
             }
 
-            xhr.open('GET', url, true);
+            // xhr.open('GET', url, true);
 
-            var that = this;
+            // var that = this;
 
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    callback.call(that, xhr.responseText);
-                }
-            };
+            // xhr.onreadystatechange = function() {
+            //     if (xhr.readyState == 4 && xhr.status == 200) {
+            //         callback.call(that, xhr.responseText);
+            //     }
+            // };
 
-            if (options.data && (options.method === 'POST' || options.method === 'PUT')) {
-                xhr.send(options.data);
-            } else {
-                xhr.send();
-            }
+            // if (options.data && (options.method === 'POST' || options.method === 'PUT')) {
+            //     xhr.send(options.data);
+            // } else {
+            //     xhr.send();
+            // }
 
-            return xhr;
+            // return xhr;
+        };
 
+
+        request.getXhr = function() {
+
+            return new XMLHttpRequest();
 
         };
 
-        if (window.silkroad) {
-            window.silkroad.request = request;
-        } else {
-            window.silkroad = {};
-            window.silkroad.request = request;
-        }
+        window.silkroad.request = request;
     }
     //end--browser--
 

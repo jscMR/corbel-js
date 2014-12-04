@@ -18,6 +18,6 @@
         var modules = {
             request: request
         };
-        return modules;
+        window.silkroad = modules;
     }
 })();
